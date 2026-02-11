@@ -268,7 +268,7 @@ spec:
         - name: name
           value: source-build-oci-ta
         - name: bundle
-          value: quay.io/rh-ee-fmudry/source-build/tekton-test:test-v1.1
+          value: quay.io/rh-ee-fmudry/source-build/tekton-test:test-v2
         - name: kind
           value: task
         resolver: bundles
