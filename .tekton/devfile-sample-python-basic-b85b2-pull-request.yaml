@@ -247,7 +247,7 @@ spec:
         - name: name
           value: build-image-index
         - name: bundle
-          value: quay.io/rh-ee-fmudry/task-runner-test:build-image-index
+          value: quay.io/rh-ee-fmudry/task-runner-test:build-image-index-v2
         - name: kind
           value: task
         resolver: bundles
