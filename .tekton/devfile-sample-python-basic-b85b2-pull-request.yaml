@@ -251,6 +251,24 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+    - name: get-bundle-version
+      runAfter: 
+      - build-image-index
+      params:
+      - name: bundle-image
+        value: $(params.output-image) 
+      taskRef:
+        resolver: bundles
+        params:
+        - name: name
+          value: opm-get-bundle-version
+        - name: bundle
+          value: quay.io/rh-ee-fmudry/task-runner:opm-get-bundle-version
+        - name: kind
+          value: task
+      workspaces:
+      - name: workspace
+        workspace: task-shared-workspace
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
@@ -574,10 +592,13 @@ spec:
       optional: true
     - name: netrc
       optional: true
+    - name: task-shared-workspace
   taskRunTemplate:
     serviceAccountName: build-pipeline-devfile-sample-python-basic-b85b2
   workspaces:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+  - name: task-shared-workspace
+    emptyDir: {}
 status: {}
