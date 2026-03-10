@@ -263,7 +263,7 @@ spec:
         - name: name
           value: opm-get-bundle-version
         - name: bundle
-          value: quay.io/rh-ee-fmudry/task-runner:opm-get-bundle-version
+          value: quay.io/rh-ee-fmudry/task-runner-test:opm-get-bundle-version
         - name: kind
           value: task
       workspaces:
