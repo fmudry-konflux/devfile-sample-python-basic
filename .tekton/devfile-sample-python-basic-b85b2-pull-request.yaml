@@ -256,7 +256,7 @@ spec:
       - build-image-index
       params:
       - name: bundle-image
-        value: $(params.output-image) 
+        value: "quay.io/mdessi/rhtpa-rhel9-operator:1.1.1"
       taskRef:
         resolver: bundles
         params:
