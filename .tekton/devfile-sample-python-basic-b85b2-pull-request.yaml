@@ -251,6 +251,24 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+    - name: opm-get-bundle-version
+      params:
+      - name: bundle-image
+        value: "quay.io/mdessi/rhtpa-rhel9-operator:1.1.1"
+      runAfter:
+      - build-image-index 
+      taskRef:
+        params:
+        - name: name
+          value: opm-get-bundle-version
+        - name: bundle
+          value: quay.io/rh-ee-fmudry/task-runner-test:opm-get-bundle-version
+        - name: kind
+          value: task
+        resolver: bundles
+      workspaces:
+      - name: workspace
+        workspace: opm-workspace
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
