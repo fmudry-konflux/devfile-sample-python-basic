@@ -592,6 +592,7 @@ spec:
       optional: true
     - name: netrc
       optional: true
+    - name: opm-workspace
   taskRunTemplate:
     serviceAccountName: build-pipeline-devfile-sample-python-basic-b85b2
   workspaces:
