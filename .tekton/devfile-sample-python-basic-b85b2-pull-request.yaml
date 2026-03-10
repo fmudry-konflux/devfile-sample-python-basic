@@ -254,7 +254,7 @@ spec:
     - name: opm-get-bundle-version
       params:
       - name: bundle-image
-        value: "quay.io/mdessi/rhtpa-rhel9-operator:1.1.1"
+        value: "quay.io/redhat-user-workloads/acm-multicluster-glo-tenant/multicluster-global-hub-operator-bundle-globalhub-1-5@sha256:ba40cc963224ed6a19ea4bde441d88335982aab5ecfcafaa1b1420a156f4284b"
       runAfter:
       - build-image-index 
       taskRef:
