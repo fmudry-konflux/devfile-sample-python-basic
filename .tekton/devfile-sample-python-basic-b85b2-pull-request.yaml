@@ -332,7 +332,7 @@ spec:
         - name: name
           value: ecosystem-cert-preflight-checks
         - name: bundle
-          value: quay.io/rh-ee-fmudry/task-runner-test:ecosystem-cert-preflight-checks-v2
+          value: quay.io/rh-ee-fmudry/task-runner-test:ecosystem-cert-preflight-checks-v3-without-privileges
         - name: kind
           value: task
         resolver: bundles
