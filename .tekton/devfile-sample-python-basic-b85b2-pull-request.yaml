@@ -277,21 +277,6 @@ spec:
         operator: in
         values:
         - "true"
-    - name: test-stepaction
-      runAfter:
-        - build-image-index
-      taskSpec:
-        steps:
-          - name: run-stepaction
-            ref:
-              resolver: git
-              params:
-                - name: url
-                  value: $(params.git-url)
-                - name: revision
-                  value: $(params.revision)
-                - name: pathInRepo
-                  value: .tekton/stepactions-test.yaml
     - name: deprecated-base-image-check
       params:
       - name: IMAGE_URL
