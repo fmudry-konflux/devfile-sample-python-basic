@@ -251,6 +251,24 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+    - name: opm-get-bundle-version
+      params:
+      - name: bundle-image
+        value: "quay.io/redhat-user-workloads/acm-multicluster-glo-tenant/multicluster-global-hub-operator-bundle-globalhub-1-5@sha256:ba40cc963224ed6a19ea4bde441d88335982aab5ecfcafaa1b1420a156f4284b"
+      runAfter:
+      - build-image-index 
+      taskRef:
+        params:
+        - name: name
+          value: opm-get-bundle-version
+        - name: bundle
+          value: quay.io/rh-ee-fmudry/task-runner-test:opm-get-bundle-version
+        - name: kind
+          value: task
+        resolver: bundles
+      workspaces:
+      - name: workspace
+        workspace: opm-workspace
     - name: build-source-image
       params:
       - name: BINARY_IMAGE
@@ -574,10 +592,13 @@ spec:
       optional: true
     - name: netrc
       optional: true
+    - name: opm-workspace
   taskRunTemplate:
     serviceAccountName: build-pipeline-devfile-sample-python-basic-b85b2
   workspaces:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+  - name: opm-workspace
+    emptyDir: {}
 status: {}
