@@ -1,5 +1,7 @@
 FROM quay.io/devfile/python:slim
 
+LABEL konflux.additional-tags="tag-dockerfile-1, tag-dockerfile-2"
+
 # By default, listen on port 8081
 EXPOSE 8081/tcp
 ENV FLASK_PORT=8081

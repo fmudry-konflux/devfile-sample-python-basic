@@ -1,0 +1,14 @@
+FROM mcr.microsoft.com/windows/nanoserver:ltsc2022
+
+LABEL name="Simple image"
+LABEL description="A container image that does close to nothing"
+LABEL com.redhat.component="multi-arch-konflux-windowssample"
+LABEL io.k8s.description="A container image that does nothing"
+LABEL io.k8s.display-name="Do-nothing image"
+
+USER ContainerAdministrator
+COPY LICENSE /licenses/
+RUN echo hello! I do nothing > C:\entrypoint.cmd
+USER ContainerUser
+
+ENTRYPOINT ["cmd", "/c", "C:\\entrypoint.cmd"]

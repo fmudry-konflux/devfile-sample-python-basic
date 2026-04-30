@@ -26,6 +26,14 @@ spec:
     value: quay.io/redhat-user-workloads-stage/fmudry-tenant/devfile-sample-python-basic-b85b2:{{revision}}
   - name: dockerfile
     value: /docker/Dockerfile
+  - name: build-platforms
+    value:
+    - windows/amd64  # this should trigger the failure
+    - "windows/arm64"
+  - name: additional-tags
+    value:
+    - tag1
+    - tag2
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
@@ -36,6 +44,14 @@ spec:
     - description: Source Repository URL
       name: git-url
       type: string
+    - default: []
+      description: Additional tags to apply to the built image
+      name: additional-tags
+      type: array
+    - name: build-platforms
+      type: array
+      description: Target platforms for the build
+      default: ["windows/amd64", "windows/arm64"]
     - default: ""
       description: Revision of the Source Repository
       name: revision
@@ -74,7 +90,7 @@ spec:
       description: Build a source image.
       name: build-source-image
       type: string
-    - default: "false"
+    - default: "true"
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
@@ -182,7 +198,12 @@ spec:
         workspace: git-auth
       - name: netrc
         workspace: netrc
-    - name: build-container
+    - matrix:
+        params:
+        - name: PLATFORM
+          value:
+          - "$(params.build-platforms[*])"
+      name: build-container
       params:
       - name: IMAGE
         value: $(params.output-image)
@@ -233,10 +254,10 @@ spec:
       - name: IMAGE
         value: $(params.output-image)
       - name: ALWAYS_BUILD_INDEX
-        value: $(params.build-image-index)
+        value: "true"
       - name: IMAGES
         value:
-        - $(tasks.build-container.results.IMAGE_URL)@$(tasks.build-container.results.IMAGE_DIGEST)
+        - $(tasks.build-container.results.IMAGE_REF[*])
       - name: BUILDAH_FORMAT
         value: $(params.buildah-format)
       runAfter:
@@ -512,6 +533,9 @@ spec:
         value: $(tasks.build-image-index.results.IMAGE_URL)
       - name: IMAGE_DIGEST
         value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+      - name: ADDITIONAL_TAGS
+        value:
+        - $(params.additional-tags[*])
       runAfter:
       - build-image-index
       taskRef:
