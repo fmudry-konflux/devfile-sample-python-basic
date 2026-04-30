@@ -29,6 +29,9 @@ spec:
     value: 5d
   - name: dockerfile
     value: /docker/Dockerfile
+  - name: build-platforms
+      value:                                                                                                                                                                                                                                                                                 
+      - windows/amd64  # this should trigger the failure
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
@@ -77,10 +80,15 @@ spec:
       description: Build a source image.
       name: build-source-image
       type: string
-    - default: "false"
+    - default: "true"
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
+    - default:
+      - linux/x86_64                                                                                                                                                                                                                                                                       
+      description: List of platforms to build on                                                                                                                                                                                                                                           
+      name: build-platforms                                                                                                                                                                                                                                                                
+      type: array
     - default: docker
       description: The format for the resulting image's mediaType. Valid values are
         oci or docker.
@@ -185,73 +193,77 @@ spec:
         workspace: git-auth
       - name: netrc
         workspace: netrc
-    - name: build-container
-      params:
-      - name: IMAGE
-        value: $(params.output-image)
-      - name: DOCKERFILE
+    - name: build-container                                                                                                                                                                                                                                                                
+      matrix:   
+        params:
+        - name: PLATFORM
+          value: $(params.build-platforms)
+      params:                                                                                                                                                                                                                                                                              
+      - name: IMAGE                                                                                                                                                                                                                                                                        
+        value: $(params.output-image)                                                                                                                                                                                                                                                      
+      - name: DOCKERFILE                                                                                                                                                                                                                                                                   
         value: $(params.dockerfile)
       - name: CONTEXT
-        value: $(params.path-context)
-      - name: HERMETIC
-        value: $(params.hermetic)
-      - name: PREFETCH_INPUT
+        value: $(params.path-context)                                                                                                                                                                                                                                                      
+      - name: HERMETIC                                                                                                                                                                                                                                                                     
+        value: $(params.hermetic)                                                                                                                                                                                                                                                          
+      - name: PREFETCH_INPUT                                                                                                                                                                                                                                                               
         value: $(params.prefetch-input)
       - name: IMAGE_EXPIRES_AFTER
-        value: $(params.image-expires-after)
-      - name: COMMIT_SHA
-        value: $(tasks.clone-repository.results.commit)
-      - name: BUILD_ARGS
-        value:
-        - $(params.build-args[*])
-      - name: BUILD_ARGS_FILE
+        value: $(params.image-expires-after)                                                                                                                                                                                                                                               
+      - name: COMMIT_SHA                                                                                                                                                                                                                                                                   
+        value: $(tasks.clone-repository.results.commit)                                                                                                                                                                                                                                    
+      - name: BUILD_ARGS                                                                                                                                                                                                                                                                   
+        value:  
+        - $(params.build-args[*])                                                                                                                                                                                                                                                          
+      - name: BUILD_ARGS_FILE                                                                                                                                                                                                                                                              
         value: $(params.build-args-file)
-      - name: PRIVILEGED_NESTED
-        value: $(params.privileged-nested)
-      - name: SOURCE_URL
+      - name: SOURCE_URL                                                                                                                                                                                                                                                                   
         value: $(tasks.clone-repository.results.url)
-      - name: BUILDAH_FORMAT
+      - name: BUILDAH_FORMAT                                                                                                                                                                                                                                                               
         value: $(params.buildah-format)
-      - name: HTTP_PROXY
+      - name: HTTP_PROXY                                                                                                                                                                                                                                                                   
         value: $(tasks.init.results.http-proxy)
-      - name: NO_PROXY
-        value: $(tasks.init.results.no-proxy)
+      - name: NO_PROXY                                                                                                                                                                                                                                                                     
+        value: $(tasks.init.results.no-proxy)                                                                                                                                                                                                                                              
       - name: SOURCE_ARTIFACT
-        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)                                                                                                                                                                                                                      
       - name: CACHI2_ARTIFACT
-        value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-      runAfter:
-      - prefetch-dependencies
-      taskRef:
+        value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)                                                                                                                                                                                                                      
+      - name: IMAGE_APPEND_PLATFORM
+        value: "true"                                                                                                                                                                                                                                                                      
+      runAfter: 
+      - prefetch-dependencies                                                                                                                                                                                                                                                              
+      taskRef:  
         params:
         - name: name
-          value: buildah-oci-ta
+          value: buildah-oci-ta                                                                                                                                                                                                                                                            
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:681d9f65a7f50cb260ee576ccab551e11d63c549f1e1ef3d201da3c112855bd6
-        - name: kind
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.9@sha256:681d9f65a7f50cb260ee576ccab551e11d63c549f1e1ef3d201da3c112855bd6                                                                                                                                         
+        - name: kind                                                                                                                                                                                                                                                                       
           value: task
         resolver: bundles
-    - name: build-image-index
-      params:
+    - name: build-image-index                                                                                                                                                                                                                                                              
+      params:                                                                                                                                                                                                                                                                              
       - name: IMAGE
         value: $(params.output-image)
       - name: ALWAYS_BUILD_INDEX
-        value: $(params.build-image-index)
+        value: $(params.build-image-index)                                                                                                                                                                                                                                                 
       - name: IMAGES
-        value:
-        - $(tasks.build-container.results.IMAGE_URL)@$(tasks.build-container.results.IMAGE_DIGEST)
+        value:                                                                                                                                                                                                                                                                             
+        - $(tasks.build-container.results.IMAGE_REF[*])                                                                                                                                                                                                                                    
       - name: BUILDAH_FORMAT
-        value: $(params.buildah-format)
-      runAfter:
+        value: $(params.buildah-format)                                                                                                                                                                                                                                                    
+      runAfter:                                                                                                                                                                                                                                                                            
       - build-container
-      taskRef:
-        params:
+      taskRef:                                                                                                                                                                                                                                                                             
+        params: 
         - name: name
           value: build-image-index
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.3@sha256:550afde50349e22ec11191ea0db9a49395ab46fef4e8317d820b6e946677ebeb
-        - name: kind
-          value: task
+        - name: bundle                                                                                                                                                                                                                                                                     
+          value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.3@sha256:550afde50349e22ec11191ea0db9a49395ab46fef4e8317d820b6e946677ebeb                                                                                                                                      
+        - name: kind                                                                                                                                                                                                                                                                       
+          value: task                                                                                                                                                                                                                                                                      
         resolver: bundles
     - name: build-source-image
       params:
