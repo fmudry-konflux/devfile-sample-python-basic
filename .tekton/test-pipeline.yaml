@@ -92,7 +92,7 @@ spec:
       description: Skip checks against built image
       name: skip-checks
       type: string
-    - default: "true"
+    - default: "false"
       description: Execute the build with network isolation
       name: hermetic
       type: string
@@ -353,7 +353,7 @@ spec:
         - name: name
           value: buildah-remote-oci-ta
         - name: bundle
-          value: quay.io/rh-ee-fmudry/tekton-catalog/build-definitions:buildah-arch-mismatch-v2
+          value: quay.io/rh-ee-fmudry/tekton-catalog/build-definitions:buildah-arch-mismatch-v3
         - name: kind
           value: task
         resolver: bundles
