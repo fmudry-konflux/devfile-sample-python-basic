@@ -353,7 +353,7 @@ spec:
         - name: name
           value: buildah-remote-oci-ta
         - name: bundle
-          value: quay.io/rh-ee-fmudry/tekton-catalog/build-definitions:buildah-arch-mismatch-v3
+          value: quay.io/rh-ee-fmudry/tekton-catalog/build-definitions:buildah-arch-mismatch-build-cli-test-ppc64le-arch-check-both
         - name: kind
           value: task
         resolver: bundles
