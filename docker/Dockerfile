@@ -10,6 +10,8 @@ WORKDIR /projects
 # Copy the dependencies file to the working directory
 COPY requirements.txt .
 
+RUN env | sort | grep -iE 'PIP_|CACHI2|HERMETO'
+
 # Install any dependencies
 RUN pip install -r requirements.txt
 
