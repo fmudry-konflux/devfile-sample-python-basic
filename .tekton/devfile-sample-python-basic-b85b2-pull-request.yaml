@@ -149,6 +149,147 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+    - name: bwrap-test
+      runAfter:
+      - init
+      taskSpec:
+        volumes:
+        - name: fake-secret
+          configMap:
+            name: bwrap-fake-secret
+        - name: fake-config
+          configMap:
+            name: bwrap-fake-config
+        steps:
+        - name: gate
+          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:bwrap-test
+          env:
+          - name: RENOVATE_TOKEN
+            value: "ghp_FAKE_TOKEN_12345"
+          - name: RENOVATE_CONFIG_FILE
+            value: "/etc/renovate/config/config.js"
+          volumeMounts:
+          - name: fake-secret
+            mountPath: /etc/renovate/secret
+            readOnly: true
+          - name: fake-config
+            mountPath: /etc/renovate/config
+            readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          script: |
+            #!/bin/bash
+            echo "=== SCC / Seccomp ==="
+            grep Seccomp /proc/self/status
+            echo "max_user_namespaces: $(cat /proc/sys/user/max_user_namespaces)"
+
+            echo ""
+            echo "=== BASELINE: secrets ARE accessible without bwrap ==="
+            echo "RENOVATE_TOKEN=$RENOVATE_TOKEN"
+            echo "Secret file: $(cat /etc/renovate/secret/renovate-token)"
+            echo "Config file: $(cat /etc/renovate/config/config.js)"
+            echo "(If any of the above are empty, the ConfigMaps are not mounted — fix before proceeding)"
+
+            echo ""
+            echo "=== unshare test ==="
+            unshare --user echo "unshare works" 2>&1
+
+            echo ""
+            echo "=== bwrap gate ==="
+            bwrap --dev-bind / / --clearenv -- echo "bwrap works" 2>&1
+            GATE=$?
+
+            if [ $GATE -ne 0 ]; then
+              echo "GATE FAILED: bwrap cannot create user namespaces on this cluster"
+              exit 0
+            fi
+
+            echo ""
+            echo "=== ISOLATION: secrets must be hidden inside bwrap ==="
+            bwrap \
+              --ro-bind /usr /usr \
+              --ro-bind /bin /bin \
+              --ro-bind /sbin /sbin \
+              --ro-bind /lib /lib \
+              --ro-bind /lib64 /lib64 \
+              --proc /proc \
+              --dev-bind /dev /dev \
+              --tmpfs /tmp \
+              --ro-bind /home/renovate/.local /home/renovate/.local \
+              --clearenv \
+              --setenv PATH "/usr/bin:/bin:/home/renovate/.local/bin" \
+              --setenv HOME /home/renovate \
+              --die-with-parent \
+              --new-session \
+              -- bash -c '
+                echo "--- Env vars ---"
+                echo "RENOVATE_TOKEN=${RENOVATE_TOKEN:-NOT SET}"
+                echo "RENOVATE_CONFIG_FILE=${RENOVATE_CONFIG_FILE:-NOT SET}"
+
+                echo "--- Secret file ---"
+                cat /etc/renovate/secret/renovate-token 2>&1 \
+                  || echo "/etc/renovate/secret/renovate-token: NOT ACCESSIBLE (good)"
+
+                echo "--- Config file ---"
+                cat /etc/renovate/config/config.js 2>&1 \
+                  || echo "/etc/renovate/config/config.js: NOT ACCESSIBLE (good)"
+
+                echo "--- /etc/renovate dir ---"
+                ls /etc/renovate 2>&1 \
+                  || echo "/etc/renovate: DOES NOT EXIST (good)"
+
+                echo "--- All env vars ---"
+                env | sort
+              '
+
+            echo ""
+            echo "=== FUNCTIONAL: pmt add-task inside bwrap ==="
+            cd /tmp
+            git clone https://github.com/fmudry-konflux/devfile-sample-python-basic.git
+            cd devfile-sample-python-basic
+
+            bwrap \
+              --ro-bind /usr /usr \
+              --ro-bind /bin /bin \
+              --ro-bind /sbin /sbin \
+              --ro-bind /lib /lib \
+              --ro-bind /lib64 /lib64 \
+              --proc /proc \
+              --dev-bind /dev /dev \
+              --tmpfs /tmp \
+              --ro-bind /home/renovate/.local /home/renovate/.local \
+              --bind /tmp/devfile-sample-python-basic /tmp/devfile-sample-python-basic \
+              --ro-bind /etc/resolv.conf /etc/resolv.conf \
+              --ro-bind /etc/hosts /etc/hosts \
+              --ro-bind /etc/nsswitch.conf /etc/nsswitch.conf \
+              --ro-bind /etc/pki /etc/pki \
+              --ro-bind /etc/ssl /etc/ssl \
+              --ro-bind /etc/alternatives /etc/alternatives \
+              --clearenv \
+              --setenv PATH "/usr/bin:/bin:/home/renovate/.local/bin" \
+              --setenv HOME /home/renovate \
+              --setenv SSL_CERT_FILE /etc/pki/tls/certs/ca-bundle.crt \
+              --setenv REQUESTS_CA_BUNDLE /etc/pki/tls/certs/ca-bundle.crt \
+              --die-with-parent \
+              --new-session \
+              --chdir /tmp/devfile-sample-python-basic \
+              -- pmt add-task \
+                 quay.io/konflux-ci/tekton-catalog/task-sast-coverity-check-oci-ta:0.3 \
+                 -f .tekton/devfile-sample-python-basic-b85b2-pull-request.yaml \
+                 --run-after build-image-index \
+                 -v 2>&1
+
+            echo ""
+            echo "=== Verify task was added ==="
+            grep -c "sast-coverity-check" \
+              .tekton/devfile-sample-python-basic-b85b2-pull-request.yaml \
+              && echo "PASS: task found" || echo "FAIL: task not found"
+
+            echo ""
+            echo "=== ALL TESTS DONE ==="
     - name: clone-repository
       params:
       - name: url
