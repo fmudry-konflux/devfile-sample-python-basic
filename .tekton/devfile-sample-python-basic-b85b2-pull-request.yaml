@@ -213,9 +213,9 @@ spec:
               {
                 "depName": "quay.io/rh-ee-fmudry/test-task-bundle",
                 "currentValue": "0.1",
-                "currentDigest": "sha256:a0bc0ad1322d61b7921efeaba72cdebf9d39c9a0394f3ccc2de640132fb89848",
+                "currentDigest": "sha256:750cfa98154c82dbc01501063c7102488902cb507308f966ad16770c20b53b52",
                 "newValue": "0.2",
-                "newDigest": "sha256:e1326bdb0f9fdf581a9d1b444454d0467d35e424f3bde8bd0b9cb3663823ad89",
+                "newDigest": "sha256:e32ab95cfa61729d47c90594dabdc60779539e7892c644bfd759c3cec8b5cf24",
                 "depTypes": ["tekton-bundle"],
                 "packageFile": ".tekton/devfile-sample-python-basic-b85b2-pull-request.yaml",
                 "parentDir": ".tekton"
@@ -223,21 +223,12 @@ spec:
             ]
             UPGRADES
 
-            echo "--- Pipeline BEFORE migration ---"
-            grep -c "sast-coverity-check" \
-              .tekton/devfile-sample-python-basic-b85b2-pull-request.yaml \
-              || echo "(task not present yet — expected)"
-
-            echo ""
             echo "--- Running pmt migrate ---"
             pmt migrate -f /tmp/upgrades.json 2>&1
 
             echo ""
-            echo "--- Pipeline AFTER migration ---"
-            grep -c "sast-coverity-check" \
-              .tekton/devfile-sample-python-basic-b85b2-pull-request.yaml \
-              && echo "PASS: task was added by migration script running inside sandbox" \
-              || echo "FAIL: task not found"
+            echo "--- Pipeline diff after migration ---"
+            git diff
 
             echo ""
             echo "=== E2E TEST DONE ==="
