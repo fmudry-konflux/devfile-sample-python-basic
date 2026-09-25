@@ -149,6 +149,89 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+    - name: sandbox-e2e-test
+      runAfter:
+      - init
+      taskSpec:
+        volumes:
+        - name: fake-secret
+          configMap:
+            name: bwrap-fake-secret
+        - name: fake-config
+          configMap:
+            name: bwrap-fake-config
+        steps:
+        - name: test-pmt-migrate-sandbox
+          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:bwrap-test-with-sandbox-v4
+          env:
+          - name: RENOVATE_TOKEN
+            value: "ghp_FAKE_TOKEN_12345"
+          - name: RENOVATE_CONFIG_FILE
+            value: "/etc/renovate/config/config.js"
+          volumeMounts:
+          - name: fake-secret
+            mountPath: /etc/renovate/secret
+            readOnly: true
+          - name: fake-config
+            mountPath: /etc/renovate/config
+            readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          script: |
+            #!/bin/bash
+            set -euo pipefail
+
+            echo "=== PREREQUISITES ==="
+            grep Seccomp /proc/self/status
+            echo "max_user_namespaces: $(cat /proc/sys/user/max_user_namespaces)"
+
+            echo ""
+            echo "=== BASELINE: secrets ARE visible outside sandbox ==="
+            echo "RENOVATE_TOKEN=$RENOVATE_TOKEN"
+            echo "Secret file: $(cat /etc/renovate/secret/renovate-token)"
+            echo "(These MUST be non-empty — otherwise ConfigMaps are not mounted)"
+
+            echo ""
+            echo "=== GATE: bwrap works ==="
+            bwrap --dev-bind / / --clearenv -- echo "bwrap OK" 2>&1
+
+            echo ""
+            echo "=== TEST: pmt migrate with sandbox ==="
+
+            # Clone repo and set up working directory
+            cd /tmp
+            git clone https://github.com/fmudry-konflux/devfile-sample-python-basic.git
+            cd devfile-sample-python-basic
+
+            # Create upgrades JSON simulating a Renovate bundle upgrade.
+            # Replace DIGEST_01 and DIGEST_02 with real values from push-test-artifacts.sh
+            cat > /tmp/upgrades.json << 'UPGRADES'
+            [
+              {
+                "depName": "quay.io/rh-ee-fmudry/test-task-bundle",
+                "currentValue": "0.1",
+                "currentDigest": "sha256:750cfa98154c82dbc01501063c7102488902cb507308f966ad16770c20b53b52",
+                "newValue": "0.2",
+                "newDigest": "sha256:e32ab95cfa61729d47c90594dabdc60779539e7892c644bfd759c3cec8b5cf24",
+                "depTypes": ["tekton-bundle"],
+                "packageFile": ".tekton/devfile-sample-python-basic-b85b2-pull-request.yaml",
+                "parentDir": ".tekton"
+              }
+            ]
+            UPGRADES
+
+            echo "--- Running pmt migrate ---"
+            pmt migrate -f /tmp/upgrades.json 2>&1
+
+            echo ""
+            echo "--- Pipeline diff after migration ---"
+            git diff
+
+            echo ""
+            echo "=== E2E TEST DONE ==="
     - name: clone-repository
       params:
       - name: url
