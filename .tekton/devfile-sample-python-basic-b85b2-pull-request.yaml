@@ -162,7 +162,7 @@ spec:
             name: bwrap-fake-config
         steps:
         - name: test-pmt-migrate-sandbox
-          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:bwrap-test-with-sandbox-v3
+          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:bwrap-test-with-sandbox-v4
           env:
           - name: RENOVATE_TOKEN
             value: "ghp_FAKE_TOKEN_12345"
