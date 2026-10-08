@@ -162,7 +162,7 @@ spec:
             name: bwrap-fake-config
         steps:
         - name: test-pmt-bwrap-denylist
-          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:bwrap-denylist-test-v1
+          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:bwrap-denylist-test-v2
           env:
           - name: RENOVATE_TOKEN
             value: "ghp_FAKE_TOKEN_12345"
