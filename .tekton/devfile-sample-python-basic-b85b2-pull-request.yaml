@@ -149,6 +149,92 @@ spec:
         - name: kind
           value: task
         resolver: bundles
+    - name: sandbox-e2e-test
+      runAfter:
+      - init
+      taskSpec:
+        volumes:
+        - name: fake-secret
+          configMap:
+            name: bwrap-fake-secret
+        - name: fake-config
+          configMap:
+            name: bwrap-fake-config
+        steps:
+        - name: test-pmt-crun-sandbox
+          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:container-test-v4
+          env:
+          - name: RENOVATE_TOKEN
+            value: "ghp_FAKE_TOKEN_12345"
+          - name: PMT_RUNNER_IMAGE
+            value: "quay.io/rh-ee-fmudry/pipeline-migration-runner:v0.9.9"
+          volumeMounts:
+          - name: fake-secret
+            mountPath: /etc/renovate/secret
+            readOnly: true
+          - name: fake-config
+            mountPath: /etc/renovate/config
+            readOnly: true
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          script: |
+            #!/bin/bash
+            set -euo pipefail
+
+            echo "=== PREREQUISITES ==="
+            echo "crun: $(crun --version 2>&1 | head -1)"
+            echo "skopeo: $(skopeo --version 2>&1)"
+            echo "umoci: $(umoci --version 2>&1)"
+            echo "max_user_namespaces: $(cat /proc/sys/user/max_user_namespaces)"
+
+            echo ""
+            echo "=== BASELINE: secrets ARE visible outside sandbox ==="
+            echo "RENOVATE_TOKEN=$RENOVATE_TOKEN"
+            echo "Secret file: $(cat /etc/renovate/secret/renovate-token 2>/dev/null || echo MISSING)"
+            echo "(These MUST be non-empty — otherwise ConfigMaps are not mounted)"
+
+            echo ""
+            echo "=== GATE: user namespace works ==="
+            unshare --user -- /usr/bin/true && echo "OK" || { echo "FAILED"; exit 1; }
+
+            echo ""
+            echo "=== TEST: pmt migrate with crun sandbox ==="
+            cd /tmp
+            git clone https://github.com/fmudry-konflux/devfile-sample-python-basic.git
+            cd devfile-sample-python-basic
+
+            cat > /tmp/upgrades.json << 'UPGRADES'
+            [
+              {
+                "depName": "quay.io/rh-ee-fmudry/test-task-bundle",
+                "currentValue": "0.1",
+                "currentDigest": "sha256:750cfa98154c82dbc01501063c7102488902cb507308f966ad16770c20b53b52",
+                "newValue": "0.2",
+                "newDigest": "sha256:e32ab95cfa61729d47c90594dabdc60779539e7892c644bfd759c3cec8b5cf24",
+                "depTypes": ["tekton-bundle"],
+                "packageFile": ".tekton/devfile-sample-python-basic-b85b2-pull-request.yaml",
+                "parentDir": ".tekton"
+              }
+            ]
+            UPGRADES
+
+            echo "--- Running pmt migrate (sandbox enabled) ---"
+            pmt migrate -f /tmp/upgrades.json 2>&1
+
+            echo ""
+            echo "--- Pipeline diff after migration ---"
+            git diff
+
+            echo ""
+            echo "=== VERIFY: secrets NOT visible inside sandbox ==="
+            echo "If the migration script ran inside crun, it could not"
+            echo "read RENOVATE_TOKEN or /etc/renovate/secret/*"
+
+            echo ""
+            echo "=== E2E TEST DONE ==="
     - name: clone-repository
       params:
       - name: url
