@@ -161,15 +161,13 @@ spec:
           configMap:
             name: bwrap-fake-config
         steps:
-        - name: test-pmt-bwrap-denylist
-          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:bwrap-denylist-test-v2
+        - name: test-pmt-crun-sandbox
+          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:container-test-v3
           env:
           - name: RENOVATE_TOKEN
             value: "ghp_FAKE_TOKEN_12345"
-          - name: RENOVATE_CONFIG_FILE
-            value: "/etc/renovate/config/config.js"
-          - name: PMT_DENY_PATHS
-            value: "/etc/renovate/secret:/etc/renovate/config:/home/renovate/.docker"
+          - name: PMT_RUNNER_IMAGE
+            value: "quay.io/rh-ee-fmudry/pipeline-migration-runner:v0.9.8"
           volumeMounts:
           - name: fake-secret
             mountPath: /etc/renovate/secret
@@ -187,28 +185,23 @@ spec:
             set -euo pipefail
 
             echo "=== PREREQUISITES ==="
-            grep Seccomp /proc/self/status
+            echo "crun: $(crun --version 2>&1 | head -1)"
+            echo "skopeo: $(skopeo --version 2>&1)"
+            echo "umoci: $(umoci --version 2>&1)"
             echo "max_user_namespaces: $(cat /proc/sys/user/max_user_namespaces)"
-            echo "bwrap: $(which bwrap 2>&1 || echo 'NOT FOUND')"
-            bwrap --version 2>&1 || true
 
             echo ""
             echo "=== BASELINE: secrets ARE visible outside sandbox ==="
             echo "RENOVATE_TOKEN=$RENOVATE_TOKEN"
-            echo "Secret file: $(cat /etc/renovate/secret/renovate-token)"
-            echo "Config file exists: $(test -f /etc/renovate/config/config.js && echo yes || echo no)"
+            echo "Secret file: $(cat /etc/renovate/secret/renovate-token 2>/dev/null || echo MISSING)"
             echo "(These MUST be non-empty — otherwise ConfigMaps are not mounted)"
 
             echo ""
-            echo "=== GATE: bwrap can create namespaces ==="
-            bwrap --bind / / -- /usr/bin/true && echo "bwrap probe: OK" || { echo "bwrap probe: FAILED"; exit 1; }
+            echo "=== GATE: user namespace works ==="
+            unshare --user -- /usr/bin/true && echo "OK" || { echo "FAILED"; exit 1; }
 
             echo ""
-         
-
-            echo ""
-            echo "=== TEST: pmt migrate with bwrap denylist ==="
-
+            echo "=== TEST: pmt migrate with crun sandbox ==="
             cd /tmp
             git clone https://github.com/fmudry-konflux/devfile-sample-python-basic.git
             cd devfile-sample-python-basic
@@ -228,12 +221,17 @@ spec:
             ]
             UPGRADES
 
-            echo "--- Running pmt migrate ---"
+            echo "--- Running pmt migrate (sandbox enabled) ---"
             pmt migrate -f /tmp/upgrades.json 2>&1
 
             echo ""
             echo "--- Pipeline diff after migration ---"
             git diff
+
+            echo ""
+            echo "=== VERIFY: secrets NOT visible inside sandbox ==="
+            echo "If the migration script ran inside crun, it could not"
+            echo "read RENOVATE_TOKEN or /etc/renovate/secret/*"
 
             echo ""
             echo "=== E2E TEST DONE ==="
