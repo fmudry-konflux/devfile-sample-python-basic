@@ -162,12 +162,12 @@ spec:
             name: bwrap-fake-config
         steps:
         - name: test-pmt-crun-sandbox
-          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:container-test-v3
+          image: quay.io/rh-ee-fmudry/mintmaker-renovate-image:container-test-v4
           env:
           - name: RENOVATE_TOKEN
             value: "ghp_FAKE_TOKEN_12345"
           - name: PMT_RUNNER_IMAGE
-            value: "quay.io/rh-ee-fmudry/pipeline-migration-runner:v0.9.8"
+            value: "quay.io/rh-ee-fmudry/pipeline-migration-runner:v0.9.9"
           volumeMounts:
           - name: fake-secret
             mountPath: /etc/renovate/secret
