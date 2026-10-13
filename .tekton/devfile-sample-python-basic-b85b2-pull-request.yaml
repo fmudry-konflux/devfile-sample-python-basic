@@ -167,7 +167,7 @@ spec:
           - name: RENOVATE_TOKEN
             value: "ghp_FAKE_TOKEN_12345"
           - name: PMT_RUNNER_IMAGE
-            value: "quay.io/rh-ee-fmudry/pipeline-migration-runner:v0.9.11"
+            value: "quay.io/rh-ee-fmudry/pipeline-migration-runner:v0.9.12"
           volumeMounts:
           - name: fake-secret
             mountPath: /etc/renovate/secret
