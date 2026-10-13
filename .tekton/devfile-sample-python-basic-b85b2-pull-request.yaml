@@ -211,9 +211,19 @@ spec:
               {
                 "depName": "quay.io/rh-ee-fmudry/test-task-bundle",
                 "currentValue": "0.1",
-                "currentDigest": "sha256:750cfa98154c82dbc01501063c7102488902cb507308f966ad16770c20b53b52",
+                "currentDigest": "sha256:a034168e33b9d076a18f696e8f8b77f0c07004ca0eedd47e774e9fbdb6d036eb",
                 "newValue": "0.2",
-                "newDigest": "sha256:e32ab95cfa61729d47c90594dabdc60779539e7892c644bfd759c3cec8b5cf24",
+                "newDigest": "sha256:648263172536ddca15cc89613070df16cde979e0b818b725aebf52b4fe396552",
+                "depTypes": ["tekton-bundle"],
+                "packageFile": ".tekton/devfile-sample-python-basic-b85b2-pull-request.yaml",
+                "parentDir": ".tekton"
+              },
+              {
+                "depName": "quay.io/rh-ee-fmudry/test-task-bundle",
+                "currentValue": "0.2",
+                "currentDigest": "sha256:648263172536ddca15cc89613070df16cde979e0b818b725aebf52b4fe396552",
+                "newValue": "0.3",
+                "newDigest": "sha256:703bab824ec5bafbf1b316a7508d2fac99931c92962bb189179efdc1957d032d",
                 "depTypes": ["tekton-bundle"],
                 "packageFile": ".tekton/devfile-sample-python-basic-b85b2-pull-request.yaml",
                 "parentDir": ".tekton"
