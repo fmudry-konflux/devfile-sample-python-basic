@@ -190,6 +190,12 @@ spec:
             echo "umoci: $(umoci --version 2>&1)"
             echo "max_user_namespaces: $(cat /proc/sys/user/max_user_namespaces)"
 
+            echo "=== LALALA ==="
+            echo "proc:"
+            cat /proc/self/attr/current
+            echo "Grep:"
+            grep Seccomp /proc/self/status
+
             echo ""
             echo "=== BASELINE: secrets ARE visible outside sandbox ==="
             echo "RENOVATE_TOKEN=$RENOVATE_TOKEN"
